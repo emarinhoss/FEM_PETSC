@@ -21,14 +21,14 @@ from auxiliary_funcs import *
 nx = 200	# grid nodes
 a  = 1.0	# advection speed
 L  = 5.0	# domain half-size
-x0 = 0.   # gaussian peak location
+x0 = 5.   # gaussian peak location
 
 # ============ Options ============ #
 order = 4   # quadrature order
 wi, xi = gaussl(order)
 
 # ============ grid ============ #
-grid = linspace(-L,L,nx)
+grid = linspace(0,10,nx)
 dx = grid[2]-grid[1]
 
 # ============ timestep ============ #

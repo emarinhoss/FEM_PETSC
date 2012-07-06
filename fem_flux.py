@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-Created on Thu Jun 21 17:03:53 2012
+Created on Tue Jul  3 13:56:32 2012
 
 1d advection test case using FEM nodal implentation with PETSc.
-Derivation using integration by parts and divergence theorem.
+Using explicit flux jacobian implementation.
 
 @author: sousae
 """
@@ -35,7 +35,7 @@ dx = grid[2]-grid[1]
 # ============ timestep ============ #
 cfl = 1.0
 dt  = abs(cfl*dx/a)
-ndt = 40        # number of cycles (timesteps)
+ndt = 20        # number of cycles (timesteps)
 # ============ Create matrices ============ #
 # Stiffness matrix
 K = PETSc.Mat().createAIJ([nx, nx], nnz=3)
@@ -75,8 +75,7 @@ for i in range(0,order):
     # Stiffness Matrix
     K11 += wi[i]*dx*0.5*(x-x2)
     K22 += wi[i]*dx*0.5*(x-x1)
-
-
+    
 for k in range(0, nx-1):  
     M.setValue(k, k, M11, PETSc.InsertMode.ADD) # Diagonal 1
     M.setValue(k+1, k+1, M22, PETSc.InsertMode.ADD) # Diagonal 2
@@ -85,26 +84,16 @@ for k in range(0, nx-1):
     # stiffness matrix
     K.setValue(k, k, K11, PETSc.InsertMode.ADD) # Diagonal 1
     K.setValue(k+1, k+1, K22, PETSc.InsertMode.ADD) # Diagonal 2
-    K.setValue(k, k+1, -K22, PETSc.InsertMode.ADD) # Off-diagonal.
-    K.setValue(k+1, k, -K11, PETSc.InsertMode.ADD) # Off-diagonal.
-        
-# set periodic BC's
-#M.setValue(0, 0, M22, PETSc.InsertMode.ADD)
-#M.setValue(nx-1, nx-1, M11, PETSc.InsertMode.ADD)
-#M.setValue(0, nx-1, M12, PETSc.InsertMode.ADD)
-#M.setValue(nx-1, 0, M12, PETSc.InsertMode.ADD)  
-#K.setValue(0, 0, K22, PETSc.InsertMode.ADD)
-#K.setValue(nx-1, nx-1, K11, PETSc.InsertMode.ADD)
-#K.setValue(0, nx-1, -K22, PETSc.InsertMode.ADD)
-#K.setValue(nx-1, 0, -K11, PETSc.InsertMode.ADD)
-
+    K.setValue(k, k+1, -K11, PETSc.InsertMode.ADD) # Off-diagonal.
+    K.setValue(k+1, k, -K22, PETSc.InsertMode.ADD) # Off-diagonal.    
+    
 # Make matrices useable.
 M.assemblyBegin()
 M.assemblyEnd()
 M.scale(1.0/(dx*dx))
 K.assemblyBegin()
 K.assemblyEnd()
-K.scale(a*dt/(dx*dx))
+K.scale(-a*dt/(dx*dx))
 
 # ============ Initialize ksp solver ============ #
 ksp = PETSc.KSP().create()
@@ -117,21 +106,19 @@ print 'Solving with:', ksp.getType()
 for t in range(0,ndt):
     
     plot(grid,u_n.array)
-    #axis((-L,L,-0.05,1.5))
-    filename = 'nodalAdv_' + str('%03d' % t) + '_.png'
+    axis((-L,L,-0.2,1.2))
+    filename = 'fem_' + str('%03d' % t) + '_.png'
     savefig(filename, dpi=200)
     clf()
     
     K.mult(u_n,b1)
     M.mult(u_n,b2)
     b = b1 + b2
-    #b.setValue(0, dt*a*u_n[0], PETSc.InsertMode.ADD)
-    #b.setValue(nx-1, -dt*a*u_n[nx-1], PETSc.InsertMode.ADD)
     ksp.solve(b, u_n1)
     u_n = u_n1
 
 plot(grid,u_n.array)
-#axis((-L,L,-0.05,1.5))
-filename = 'nodalAdv_' + str('%03d' % ndt) + '_.png'
+axis((-L,L,-0.2,1.2))
+filename = 'fem_' + str('%03d' % ndt) + '_.png'
 savefig(filename, dpi=200)
 clf()
