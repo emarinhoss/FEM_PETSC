@@ -72,13 +72,13 @@ dPhi3 = 0.
 for i in range(0,order):
     x = xi[i]*dx+x2
     
-    Phi1 += wi[i]*dx*(x*x-x*(x2+x3)+x2*x3)/(2.*dx*dx)
+    Phi1 += wi[i]*dx*(x*x-x*(x2+x3)+x2*x3)/(dx*dx)
     Phi2 += wi[i]*dx*(x*x-x*(x3+x1)+x3*x1)/(-dx*dx)
-    Phi3 += wi[i]*dx*(x*x-x*(x2+x1)+x2*x1)/(2.*dx*dx)
+    Phi3 += wi[i]*dx*(x*x-x*(x2+x1)+x2*x1)/(dx*dx)
     
-    dPhi1 += wi[i]*dx*(2*x-x2-x3)/(2*dx*dx)
+    dPhi1 += wi[i]*dx*(2*x-x2-x3)/(dx*dx)
     dPhi2 += wi[i]*dx*(2*x-x1-x3)/(-dx*dx)
-    dPhi3 += wi[i]*dx*(2*x-x2-x1)/(2*dx*dx)
+    dPhi3 += wi[i]*dx*(2*x-x2-x1)/(dx*dx)
     
 for k in range(0, (nx-1)/2):
     # ======================

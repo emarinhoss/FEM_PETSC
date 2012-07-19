@@ -19,7 +19,7 @@ from petsc4py import PETSc
 from auxiliary_funcs import *
 
 # ============ variables ============ #
-nx = 301	# grid nodes
+nx = 101	# grid nodes
 a  = 1.0	# advection speed
 L  = 5.0	# domain half-size
 x0 = 0.   # gaussian peak location
