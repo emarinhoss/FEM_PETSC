@@ -38,6 +38,7 @@ dt  = abs(cfl*dx/a)
 ndt = 20        # number of cycles (timesteps)
 # ============ Create matrices ============ #
 # Stiffness matrix
+
 K = PETSc.Mat().createAIJ([nx, nx], nnz=3)
 
 # Mass matrix
