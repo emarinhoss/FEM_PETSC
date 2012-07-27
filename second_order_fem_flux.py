@@ -25,7 +25,7 @@ L  = 5.0	# domain half-size
 x0 = 0.   # gaussian peak location
 
 # ============ Options ============ #
-order = 2   # quadrature order
+order = 4   # quadrature order
 wi, xi = gaussl(order)
 
 # ============ grid ============ #
@@ -63,55 +63,84 @@ for i in range(0,nx):
 x1 = grid[0]
 x2 = grid[1]
 x3 = grid[2]
-Phi1 = 0.
-Phi2 = 0.
-Phi3 = 0.
-dPhi1 = 0.
-dPhi2 = 0.
-dPhi3 = 0.
+
+M11 = 0.
+M12 = 0.
+M13 = 0.
+M22 = 0.
+M23 = 0.
+M33 = 0.
+
+K11 = 0.
+K12 = 0.
+K13 = 0.
+K21 = 0.
+K22 = 0.
+K23 = 0.
+K31 = 0.
+K32 = 0.
+K33 = 0.
+
 
 for i in range(0,order):
     x = xi[i]*dx+x2
     
-    Phi1 += wi[i]*dx*(x*x-x*(x2+x3)+x2*x3)/(dx*dx)
-    Phi2 += wi[i]*dx*(x*x-x*(x3+x1)+x3*x1)/(-dx*dx)
-    Phi3 += wi[i]*dx*(x*x-x*(x2+x1)+x2*x1)/(dx*dx)
+    Phi1 = (x*x-x*(x2+x3)+x2*x3)/(2*dx*dx)
+    Phi2 = (x*x-x*(x3+x1)+x3*x1)/(-dx*dx)
+    Phi3 = (x*x-x*(x2+x1)+x2*x1)/(2*dx*dx)
     
-    dPhi1 += wi[i]*dx*(2*x-x2-x3)/(dx*dx)
-    dPhi2 += wi[i]*dx*(2*x-x1-x3)/(-dx*dx)
-    dPhi3 += wi[i]*dx*(2*x-x2-x1)/(dx*dx)
+    dPhi1 = (2*x-x2-x3)/(2*dx*dx)
+    dPhi2 = (2*x-x1-x3)/(-dx*dx)
+    dPhi3 = (2*x-x2-x1)/(2*dx*dx)
+    
+    M11 += wi[i]*dx*Phi1*Phi1
+    M12 += wi[i]*dx*Phi1*Phi2
+    M13 += wi[i]*dx*Phi1*Phi3
+    M22 += wi[i]*dx*Phi2*Phi2
+    M23 += wi[i]*dx*Phi2*Phi3
+    M33 += wi[i]*dx*Phi3*Phi3
+    
+    K11 += wi[i]*dx*Phi1*dPhi1
+    K12 += wi[i]*dx*Phi1*dPhi2
+    K13 += wi[i]*dx*Phi1*dPhi3
+    K21 += wi[i]*dx*Phi2*dPhi1
+    K22 += wi[i]*dx*Phi2*dPhi2
+    K23 += wi[i]*dx*Phi2*dPhi3
+    K31 += wi[i]*dx*Phi3*dPhi1
+    K32 += wi[i]*dx*Phi3*dPhi2
+    K33 += wi[i]*dx*Phi3*dPhi3
     
 for k in range(0, (nx-1)/2):
     # ======================
     # Mass matrix
     # ======================
     # 1st row
-    M.setValue(2*k, 2*k, Phi1*Phi1, PETSc.InsertMode.ADD) 
-    M.setValue(2*k, 2*k+1, Phi1*Phi2, PETSc.InsertMode.ADD) 
-    M.setValue(2*k, 2*k+2, Phi1*Phi3, PETSc.InsertMode.ADD)
+    M.setValue(2*k, 2*k,   M11, PETSc.InsertMode.ADD) 
+    M.setValue(2*k, 2*k+1, M12, PETSc.InsertMode.ADD) 
+    M.setValue(2*k, 2*k+2, M13, PETSc.InsertMode.ADD)
     # 2nd row
-    M.setValue(2*k+1, 2*k, Phi2*Phi1, PETSc.InsertMode.ADD) 
-    M.setValue(2*k+1, 2*k+1, Phi2*Phi2, PETSc.InsertMode.ADD) 
-    M.setValue(2*k+1, 2*k+2, Phi2*Phi3, PETSc.InsertMode.ADD)
+    M.setValue(2*k+1, 2*k,   M12, PETSc.InsertMode.ADD) 
+    M.setValue(2*k+1, 2*k+1, M22, PETSc.InsertMode.ADD) 
+    M.setValue(2*k+1, 2*k+2, M23, PETSc.InsertMode.ADD)
     # 3rd row
-    M.setValue(2*k+2, 2*k, Phi3*Phi1, PETSc.InsertMode.ADD) 
-    M.setValue(2*k+2, 2*k+1, Phi3*Phi2, PETSc.InsertMode.ADD) 
-    M.setValue(2*k+2, 2*k+2, Phi3*Phi3, PETSc.InsertMode.ADD)
+    M.setValue(2*k+2, 2*k,   M13, PETSc.InsertMode.ADD) 
+    M.setValue(2*k+2, 2*k+1, M23, PETSc.InsertMode.ADD) 
+    M.setValue(2*k+2, 2*k+2, M33, PETSc.InsertMode.ADD)
     # ======================
     # Stiffness matrix
     # ======================
     # 1st row
-    K.setValue(2*k, 2*k, Phi1*dPhi1, PETSc.InsertMode.ADD) 
-    K.setValue(2*k, 2*k+1, Phi1*dPhi2, PETSc.InsertMode.ADD) 
-    K.setValue(2*k, 2*k+2, Phi1*dPhi3, PETSc.InsertMode.ADD)
+    K.setValue(2*k, 2*k,   K11, PETSc.InsertMode.ADD) 
+    K.setValue(2*k, 2*k+1, K12, PETSc.InsertMode.ADD) 
+    K.setValue(2*k, 2*k+2, K13, PETSc.InsertMode.ADD)
     # 2nd row
-    K.setValue(2*k+1, 2*k, Phi2*dPhi1, PETSc.InsertMode.ADD) 
-    K.setValue(2*k+1, 2*k+1, Phi2*dPhi2, PETSc.InsertMode.ADD) 
-    K.setValue(2*k+1, 2*k+2, Phi2*dPhi3, PETSc.InsertMode.ADD)
+    K.setValue(2*k+1, 2*k,   K21, PETSc.InsertMode.ADD) 
+    K.setValue(2*k+1, 2*k+1, K22, PETSc.InsertMode.ADD) 
+    K.setValue(2*k+1, 2*k+2, K23, PETSc.InsertMode.ADD)
     # 3rd row
-    K.setValue(2*k+2, 2*k, Phi3*dPhi1, PETSc.InsertMode.ADD) 
-    K.setValue(2*k+2, 2*k+1, Phi3*dPhi2, PETSc.InsertMode.ADD) 
-    K.setValue(2*k+2, 2*k+2, Phi3*dPhi3, PETSc.InsertMode.ADD)
+    K.setValue(2*k+2, 2*k,   K31, PETSc.InsertMode.ADD) 
+    K.setValue(2*k+2, 2*k+1, K32, PETSc.InsertMode.ADD) 
+    K.setValue(2*k+2, 2*k+2, K33, PETSc.InsertMode.ADD)
 
     
 # Make matrices useable.
