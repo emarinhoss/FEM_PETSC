@@ -40,9 +40,12 @@ def upperBC(A, vec):
     n = size(A)
     n = n -1
     
-    vec[N-2] = (2*vec[N-5]/A[n-1]-vec[N-8]/A[n-2])*A[n]
-    vec[N-1] = (2*vec[N-4]/A[n-1]-vec[N-7]/A[n-2])*A[n]
-    vec[N]   = (2*vec[N-3]/A[n-1]-vec[N-6]/A[n-2])*A[n]
+    vec[N-2] = 1.0
+    vec[N-1] = 0.59160797830996659
+    vec[N]   = 2.6750000000000034
+#    vec[N-2] = (2*vec[N-5]/A[n-1]-vec[N-8]/A[n-2])*A[n]
+#    vec[N-1] = (2*vec[N-4]/A[n-1]-vec[N-7]/A[n-2])*A[n]
+#    vec[N]   = (2*vec[N-3]/A[n-1]-vec[N-6]/A[n-2])*A[n]
     
     return vec
     
@@ -65,6 +68,23 @@ def fluxJacob(q):
     F = array([[0.,1.,0.],[0.5*(gm-3.)*(q[1]/q[0])**2,(3.-gm)*q[1]/q[0], gm-1],[-gm*q[1]*q[2]/q[0]**2+0.5*(gm-1.)*(q[1]/q[0])**3, gm*q[2]/q[1]-1.5*(gm-1.)*(q[1]/q[0])**2, gm*q[1]/q[0]]])
     
     return F
+    
+def calc_flux(q):
+	
+	f   = zeros(3)
+	
+	rho = q[0]	# density
+	rhou= q[1]	# momentum
+	e   = q[2]	# energy
+	
+	p   = (gm-1.)*(e - 0.5*rhou*rhou/(rho*rho))	# pressure
+	u   = rhou/rho	# velocity
+	
+	f[0] = rhou
+	f[1] = rho*u*u + p
+	f[2] = (e+p)*u
+	
+	return f
 
 def computeSource(u_n):
     wi, xi = gaussl(order)
@@ -136,18 +156,18 @@ def plot_solution(i, un):
 def forwardEuler(dt, un, SOL):
     # ============ Calculate Flux Jacobian ============ #
     for k in range(0, nx-1):
-        if (k == 0) or (k == nx-2):
-            val = 1.
-        else:
-            val = 2.
+        #if (k == 0) or (k == nx-2):
+        #    val = 1.
+        #else:
+        #    val = 2.
         
-        FluxJ = fluxJacob(u_n[k*V:k*V+V])
-        dF[k*V:k*V+V, k*V:k*V+V] = val*FluxJ
+        #FluxJ = fluxJacob(u_n[k*V:k*V+V])
+        f_n[k*V:k*V+V] = calc_flux(u_n[k*V:k*V+V])
+        #dF[k*V:k*V+V, k*V:k*V+V] = val*FluxJ
     
     # ============ calculate RHS ============ #
     S = computeSource(un)
-    RHS = M - dt*dot(dF,K)
-    b = S + dot(RHS,un)
+    b = dt*(S - dot(K,f_n)) + dot(M,un)
     
     # ============ Solve ============ #
     start = time.clock()
@@ -206,7 +226,7 @@ nelem= 50	 # element number
 L    = 3.0	 # domain size
 
 # ============ GL quadrature integration ============ #
-order = 2   # order
+order = 3   # order
 wi, xi = gaussl(order)
 
 # ============ timestep ============ #
@@ -233,6 +253,7 @@ dF= zeros((nx*V, nx*V))
 # ============ Create vectors ============ #
 A    = zeros(nx)    # area 
 u_n  = zeros(nx*V)    # current solution
+f_n  = zeros(nx*V)    # current flux
 u_n1 = zeros(nx*V)    # solution at n+1
 b    = zeros(nx*V)    # right hand side
 S    = zeros(nx*V)    # sources
@@ -243,7 +264,7 @@ for i in range(0,nx):
     A[i] = 1.+mt*(grid[i]-1.5)**2
     rho = 1.0
     T = 1.0
-    Mach = 1.0e-1
+    Mach = 5.0e-1
     v = Mach*sqrt(gm*T)
     #rho = (1.-0.3146*grid[i])    
     #T = (1.-0.2314*grid[i])
@@ -311,8 +332,9 @@ for t in range(1,ndt):
     # ============ calculate timestep ============ #
     dt = timestep(un)
     # ============ Advance Solution ============ #
-    unp1 = leapFrog(dt, un, unm1, SOL)
-    unm1 = un
+    unp1 = forwardEuler(dt, un, SOL)
+    #unp1 = leapFrog(dt, un, unm1, SOL)
+    #unm1 = un
     un = unp1
     tme += dt
 
