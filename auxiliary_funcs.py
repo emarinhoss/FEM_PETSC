@@ -76,3 +76,26 @@ def gaussl(o):
         wi = array([2.])
     
     return wi, xi
+    
+def interpolationf(xg, x, Phi, dPhi):
+    pts = size(xg)
+    
+    for k in range(0,pts):
+        Phi[k] = 0.0
+        dPhi[k]= 0.0
+    
+    if pts==3:
+        Phi[0] = (x-xg[1])*(x-xg[2])/((xg[0]-xg[1])*(xg[0]-xg[2]))
+        Phi[1] = (x-xg[0])*(x-xg[2])/((xg[1]-xg[0])*(xg[1]-xg[2]))
+        Phi[2] = (x-xg[0])*(x-xg[1])/((xg[2]-xg[1])*(xg[2]-xg[0]))
+        
+        dPhi[0] = (2*x-(xg[1]+xg[2]))/((xg[0]-xg[1])*(xg[0]-xg[2]))
+        dPhi[1] = (2*x-(xg[0]+xg[2]))/((xg[1]-xg[0])*(xg[1]-xg[2]))
+        dPhi[2] = (2*x-(xg[1]+xg[0]))/((xg[2]-xg[1])*(xg[2]-xg[0]))
+        
+    else:
+        Phi[0] = (x-xg[1])/(xg[0]-xg[1])
+        Phi[1] = (x-xg[0])/(xg[1]-xg[0])
+        
+        dPhi[0] = 1./(xg[0]-xg[1])
+        dPhi[1] = 1./(xg[1]-xg[0])    

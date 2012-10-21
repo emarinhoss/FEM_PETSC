@@ -47,8 +47,9 @@ def upperBC(A, vec):
     return vec
     
 def timestep(cfl, gm, dx, u):
-    n = size(u)
-    dt = 1.0e3    
+    n  = size(u)
+    dt = 1.0e3
+    p  = 1
     
     for k in range(0, n/3):
         P = (gm - 1.)*(u[3*k+2] - 0.5*u[3*k+1]*u[3*k+1]/u[3*k])
@@ -57,7 +58,7 @@ def timestep(cfl, gm, dx, u):
         c = sqrt(gm*P/u[3*k])
         v = u[3*k+1]/u[3*k]
         
-        dt = min(dt, cfl*dx/(c+v))
+        dt = min(dt, cfl*1./(2.*p+1.)*dx/(c+v))
         
     return dt
 
@@ -98,9 +99,6 @@ def computeSource(mt,g,order,u_n,grid):
         src.setValue(k*V+V+1, s2, PETSc.InsertMode.ADD)
               
     return src
-        
-        
-        
 
 from math import *
 from numpy import *
@@ -128,7 +126,7 @@ wi, xi = gaussl(order)
 
 # ============ timestep ============ #
 cfl = 0.1      # cfl condition (for stability)
-ndt = 60        # number of cycles (timesteps)
+ndt = 200        # number of cycles (timesteps)
 time = 0.0      # current time
 # ============ Create matrices ============ #
 N  = 1		# interpolation function order
@@ -244,7 +242,7 @@ ksp.setFromOptions()
 print 'Solving with:', ksp.getType()
 
 for t in range(0,ndt):
-    print t, time
+    #print t, time
     # ============ Apply BC's ============ #
     u_n = lowerBC(gm,A,u_n)
     u_n = upperBC(A, u_n)
@@ -274,8 +272,8 @@ for t in range(0,ndt):
     
     # ============ calculate timestep ============ #
     dt = timestep(cfl, gm, dx, u_n)
-    #dt = 0.005
-    #print dt
+    #dt = 0.04
+    print t, dt, time
     
     # ============ calculate RHS ============ #
     S = computeSource(mt,gm,order,u_n,grid)
