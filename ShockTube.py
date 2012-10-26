@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 """
-Created on Wed Aug 29 11:49:44 2012
+Created on Mon Oct 22 16:43:32 2012
 
-Quasi-1d euler eqn using FEM nodal implentation with Scipy.
+1d euler eqn using FEM nodal implentation with Scipy.
 Using explicit flux jacobian implementation and first order elements.
+
+Shock tube problem
 
 @author: sousae
 """
@@ -22,28 +24,28 @@ def dataforplot(comp, vec):
     
     return q1, q2, q3
 
-def lowerBC(A, vec):
+def lowerBC(vec):
     
-    vec[0] = (1.0*A[0])
-    vec[1] = (Mach*a_inf*A[0])
-    vec[2] = (0.75*A[0]/(gm-1.)+0.5*vec[1]*vec[1]/vec[0])
+    vec[0] = 1.0
+    vec[1] = 0.0
+    vec[2] = 2.5
     
     return vec
     
-def upperBC(A, vec):
+def upperBC(vec):
     N = size(vec)
     N = N - 1
-    n = size(A)
-    n = n -1
     
-    vec[N]    = (P_pr*A[n]/(gm-1.)+0.5*vec[N-1]*vec[N-1]/vec[N-2])
+    vec[N-2] = 4.0
+    vec[N-1] = 0.0
+    vec[N]   = 10.0
     
     return vec
     
 def timestep(u):
     n = size(u)
     dt = 1.0e3    
-    
+
     for k in range(0, n/3):
         P = (gm - 1.)*(u[3*k+2] - 0.5*u[3*k+1]*u[3*k+1]/u[3*k])
         if P < 0:
@@ -67,38 +69,6 @@ def fluxJacob(q):
     F[2,2] = gm*q[1]/q[0]
     
     return F
-
-def computeSource(u_n):
-    wi, xi = gaussl(order)
-    n  = size(u_n)
-    
-    val = zeros(size(u_n))
-    
-    for k in range(0,n/3-1):
-        rho1 = u_n[V*k]
-        mu1  = u_n[V*k+1]
-        e1   = u_n[V*k+2]
-        p1   = (gm-1.)*(e1-0.5*mu1*mu1/rho1)
-        s1   = 0.
-        rho2 = u_n[V*k+V]
-        mu2  = u_n[V*k+V+1]
-        e2   = u_n[V*k+V+2]
-        p2   = (gm-1.)*(e2-0.5*mu2*mu2/rho2)
-        s2   = 0.
-        
-        for i in range(0,order):
-            x    = 0.5*(xi[i]*dx+(grid[k]+grid[k+1]))
-            Phi1 = (grid[k+1]-x)/dx
-            Phi2 = (x-grid[k])/dx
-            dA   = 0.2776*(1.-tanh(0.8*x-4.)*tanh(0.8*x-4.))
-            
-            s1 += wi[i]*dx*0.5*(Phi1*Phi1*p1 + Phi1*Phi2*p2)*dA
-            s2 += wi[i]*dx*0.5*(Phi1*Phi2*p1 + Phi2*Phi2*p2)*dA
-        
-        val[k*V+1] += s1
-        val[k*V+V+1] += s2
-              
-    return val
     
 def interpolationf(xg, x, Phi, dPhi):
     pts = size(xg)
@@ -125,9 +95,9 @@ def interpolationf(xg, x, Phi, dPhi):
 
 def plot_solution(i, un, tns):
     a,d,c = dataforplot(V,un)
-    rho = a/r_inf/A
+    rho = a/r_inf
     u = d/(a_inf)/a
-    e = c/(r_inf*a_inf*a_inf)/A
+    e = c/(r_inf*a_inf*a_inf)
     p = (gm-1.)*(e-0.5*rho*u*u)
     
     subplot(221), plot(grid,rho), ylabel(r'$\rho$')#, ylim([0.5, 2.])
@@ -136,10 +106,10 @@ def plot_solution(i, un, tns):
     subplot(223), plot(grid,u), ylabel(r'$u$')#, ylim([0., 2])
     subplot(224), plot(grid,e), ylabel(r'$e$')#, xlabel(r'$x$')#, ylim([1., 4.])
     
-    filename = 'py_quasi_' + str('%03d' % i) + '_.png'
+    filename = 'shock_' + str('%03d' % i) + '_.png'
     savefig(filename, dpi=200)
     DataOut = column_stack((grid,p,rho,u,e))
-    outname = 'data_200_' + str('%1.3f' % P_pr) + '_.dat'
+    outname = 'shocktube.dat'
     savetxt(outname, DataOut)
     clf()
         
@@ -176,11 +146,15 @@ def RK4(dt, un):
     return unp1
 
 def calcrk(vec):
-    S = computeSource(vec)
-    
+    global test
+   
     Afk = dot(dF,K)
+#    for i in range(0,50):
+#        test[3*i] = 0
+#        test[3*i+1] = vec[3*i+1]
+#        test[3*i+2] = vec[3*i+2]
     
-    ftx = S - dot(Afk,vec) - dot(Vv,vec) - Nbc
+    ftx = - dot(Afk,vec) - dot(Vv,vec) - Nbc
     
     # ============ solve ============ #
     sol = scipy.linalg.solve(M,ftx)
@@ -212,18 +186,18 @@ wi, xi = gaussl(order)
 
 # ============ timestep ============ #
 cfl = 0.5      # cfl condition (for stability)
-ndt = 7500    # number of cycles (timesteps)
+ndt = 40    # number of cycles (timesteps)
 tme = 0.0      # current time
 # ============ Create matrices ============ #
 N  = 1          # interpolation function order
 V  = 3          # number of components per node
 nx = nelem*N+1  # number of nodes
-epsn= 0.5e-1    # artificial diffusion parameter
+epsn= 1.73e-2    # artificial diffusion parameter
 # ============ create grid ============ #
 grid = linspace(0.0,L,nx)
 
 
-global K, M, dF, Vv, Nbc, A, SOL
+global K, M, dF, Vv, Nbc, A, SOL, test
 # Stiffness matrix
 K  = zeros((nx*V, nx*V))
 # Mass matrix
@@ -235,29 +209,34 @@ Vv = zeros((nx*V, nx*V))
 
 
 # ============ Create vectors ============ #
-A  = zeros(nx)    # area 
 un = zeros(nx*V)    # current solution
 b  = zeros(nx*V)    # right hand side
 S  = zeros(nx*V)    # sources
 Nbc= zeros(nx*V)    # natural BC's
+test= zeros(nx*V)
 
 # ============ Initialize ============ #
 r_inf = 1.0
 P_inf = 0.75
-Mach = 1.25
+Mach = 0.0
 a_inf = sqrt(gm*P_inf/r_inf)
 v = Mach*a_inf
-e = P_inf/(gm-1.)+0.5*r_inf*v*v
+
 tau = L/a_inf
-Pe = 1.2
-P_pr= Pe*r_inf*a_inf*a_inf
 
 for i in range(0,nx):
-    A[i] = 1.398 + 0.347*tanh(0.8*grid[i]-4.0)
     
-    un[i*V]  = r_inf*A[i]
-    un[i*V+1]= r_inf*v*A[i]
-    un[i*V+2]= e*A[i]
+    if grid[i]<5.0:
+        
+        un[i*V]  = 1.0
+        un[i*V+1]= 0.0
+        un[i*V+2]= 2.5
+        
+    else:
+        
+        un[i*V]  = 4.0
+        un[i*V+1]= 0.0
+        un[i*V+2]= 10.0
 
 # ============ Populate Matrices ============ #
 blk = (N+1)*V
@@ -304,9 +283,8 @@ for t in range(0,ndt):
     print t, tme
     
     # ============ Apply BC's ============ #
-    un = lowerBC(A, un)
-    un = upperBC(A, un)
-    
+    un = lowerBC(un)
+    un = upperBC(un)
     # ============ Plot Solution ============ #
     plot_solution(t, un, tme/tau)
     # ============ calculate timestep ============ #
