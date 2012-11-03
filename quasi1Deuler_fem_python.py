@@ -24,9 +24,9 @@ def dataforplot(comp, vec):
 
 def lowerBC(A, vec):
     
-    vec[0] = (1.0*A[0])
-    vec[1] = (Mach*a_inf*A[0])
-    vec[2] = (0.75*A[0]/(gm-1.)+0.5*vec[1]*vec[1]/vec[0])
+    vec[0] = r_inf*A[0]
+    vec[1] = Mach*a_inf*A[0]
+    vec[2] = P_inf*A[0]/(gm-1.)+0.5*vec[1]*vec[1]/vec[0]
     
     return vec
     
@@ -36,7 +36,7 @@ def upperBC(A, vec):
     n = size(A)
     n = n -1
     
-    vec[N]    = (P_pr*A[n]/(gm-1.)+0.5*vec[N-1]*vec[N-1]/vec[N-2])
+    vec[N]    = P_pr*A[n]/(gm-1.)+0.5*vec[N-1]*vec[N-1]/vec[N-2]
     
     return vec
     
@@ -62,7 +62,7 @@ def fluxJacob(q):
     F[1,0] = 0.5*(gm-3.)*(q[1]/q[0])**2
     F[1,1] = (3.-gm)*q[1]/q[0]
     F[1,2] = gm-1.
-    F[2,0] = -gm*q[1]*q[2]/q[0]**2+0.5*(gm-1.)*(q[1]/q[0])**3
+    F[2,0] = -gm*q[1]*q[2]/q[0]**2+(gm-1.)*(q[1]/q[0])**3
     F[2,1] = gm*q[2]/q[0]-1.5*(gm-1.)*(q[1]/q[0])**2
     F[2,2] = gm*q[1]/q[0]
     
@@ -139,7 +139,7 @@ def plot_solution(i, un, tns):
     filename = 'py_quasi_' + str('%03d' % i) + '_.png'
     savefig(filename, dpi=200)
     DataOut = column_stack((grid,p,rho,u,e))
-    outname = 'data_200_' + str('%1.3f' % P_pr) + '_.dat'
+    outname = 'data_' + str('%03d' % nelem) + '_' + str('%1.3f' % P_pr) + '_.dat'
     savetxt(outname, DataOut)
     clf()
         
@@ -195,7 +195,7 @@ import scipy.linalg
 import time
 
 from auxiliary_funcs import *
-global order, gm, dx, cfl, mt, grid
+global order, gm, dx, cfl, mt, grid, nelem
 global V, nx, N, M21
 global Mach, r_inf, a_inf, P_inf, epsn, P_pr
 
@@ -203,7 +203,7 @@ global Mach, r_inf, a_inf, P_inf, epsn, P_pr
 gm = 1.4    # gas gamma
 
 # ============ variables grid ============ #
-nelem= 200	 # element number
+nelem= 100	 # element number
 L    = 10.0	 # domain size
 
 # ============ GL quadrature integration ============ #
@@ -212,13 +212,13 @@ wi, xi = gaussl(order)
 
 # ============ timestep ============ #
 cfl = 0.5      # cfl condition (for stability)
-ndt = 7500    # number of cycles (timesteps)
+ndt = 6500    # number of cycles (timesteps)
 tme = 0.0      # current time
 # ============ Create matrices ============ #
 N  = 1          # interpolation function order
 V  = 3          # number of components per node
 nx = nelem*N+1  # number of nodes
-epsn= 0.5e-1    # artificial diffusion parameter
+epsn= 1.0e-2    # artificial diffusion parameter
 # ============ create grid ============ #
 grid = linspace(0.0,L,nx)
 
@@ -249,7 +249,7 @@ a_inf = sqrt(gm*P_inf/r_inf)
 v = Mach*a_inf
 e = P_inf/(gm-1.)+0.5*r_inf*v*v
 tau = L/a_inf
-Pe = 1.2
+Pe = 1.1
 P_pr= Pe*r_inf*a_inf*a_inf
 
 for i in range(0,nx):

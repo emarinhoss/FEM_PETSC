@@ -11,35 +11,44 @@ from pylab import *
 import matplotlib.font_manager as fm
 
 
+# ============= normalized parameters
+gm = 1.4
+r_inf = 1.0
+P_inf = 0.75
+a_inf = sqrt(gm*P_inf/r_inf)
+tau = 10./a_inf
+
 font = {'fontsize'   : 20}
 
 # 
-data1 = loadtxt('data_200_1.050_.dat')
-data2 = loadtxt('data_200_1.155_.dat')
-data3 = loadtxt('data_200_1.260_.dat')
+data1 = loadtxt('data_200_1.155_.dat')
+data2 = loadtxt('data_200_1.260_.dat')
+data3 = loadtxt('data_200_1.365_.dat')
 
 #
-data4 = loadtxt('data_1.050_.dat')
-data5 = loadtxt('data_100_1.050_.dat')
+data4 = loadtxt('data_050_1.155_.dat')
+data5 = loadtxt('data_100_1.155_.dat')
 
 lbls = ['p', r'$\rho$','u','e']
-prop = fm.FontProperties(size=20)
+prop = fm.FontProperties(size=18)
 
 
-plot(data1[:,0],data1[:,1], 'b',linewidth=2), ylabel(lbls[1],font), ylim(0.2, 1.3), xlabel('x',font)
-plot(data2[:,0],data2[:,1], 'r',linewidth=2), ylabel(lbls[1])
-plot(data3[:,0],data3[:,1], 'k',linewidth=2), ylabel(lbls[1])
-legend((r'$p_e=1.0$',r'$p_e=1.1$',r'$p_e=1.2$'), 0, prop=prop)
-plot([5.6, 5.6],[0.2, 1.3],'k--',linewidth=2)
+plot(data1[:,0],data1[:,2], 'b',linewidth=2), ylabel(lbls[1],font), ylim(0.4, 1.5), xlabel('x',font)
+plot(data2[:,0],data2[:,2], 'r',linewidth=2), ylabel(lbls[1])
+plot(data3[:,0],data3[:,2], 'k',linewidth=2), ylabel(lbls[1])
+legend((r'$p_e/p_c=0.5945$',r'$p_e/p_c=0.6486$',r'$p_e/p_c=0.7026$'), 3, prop=prop)
+plot([6.37, 6.37],[0.4, 1.5],'b--',linewidth=2)
+plot([5.61, 5.61],[0.4, 1.5],'r--',linewidth=2)
+plot([5.16, 5.16],[0.4, 1.5],'k--',linewidth=2)
 yticks(fontsize=18)
 xticks(fontsize=18)
 filename = 'nozzlePlots1.png'
 savefig(filename, dpi=200)
 clf()
 
-plot(data1[:,0],data1[:,1], 'b',linewidth=2), ylabel(lbls[1],font), xlabel('x',font)
-plot(data5[:,0],data5[:,1], 'k',linewidth=2), ylabel(lbls[1],font)
-plot(data4[:,0],data4[:,1], 'r',linewidth=2), ylabel(lbls[1],font)
+plot(data1[:,0],data1[:,2], 'b',linewidth=2), ylabel(lbls[1],font), xlabel('x',font), ylim(0.4, 1.5)
+plot(data5[:,0],data5[:,2], 'k',linewidth=2), ylabel(lbls[1],font)
+plot(data4[:,0],data4[:,2], 'r',linewidth=2), ylabel(lbls[1],font)
 legend((r'$200$',r'$100$',r'$50$'), 0, prop=prop)
 yticks(fontsize=18)
 xticks(fontsize=18)
