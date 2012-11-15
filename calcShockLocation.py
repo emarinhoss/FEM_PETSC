@@ -24,7 +24,7 @@ a_inf = sqrt(gm*P_inf/r_inf)
 
 # ============= the only inputs
 pi = 0.75/(r_inf*a_inf*a_inf)
-pe = 1.1
+pe = 1.14
 
 # ============= calculations
 A_ratio = sqrt(1./Mi**2*(2./gp1*(1.+0.5*gm1*Mi**2))**(gp1/gm1))
